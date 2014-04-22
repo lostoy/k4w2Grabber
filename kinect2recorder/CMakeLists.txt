@@ -15,7 +15,7 @@ find_package(PCL 1.2 REQUIRED COMPONENTS common io io_ply visualization)
 
 
 
-include_directories(${Boost_INCLUDE_DIRS} ../kinect2grabber/include "C:/Program Files/Microsoft SDKs/Kinect/v2.0-DevPreview1311/inc")
+include_directories(${Boost_INCLUDE_DIRS} ../kinect2grabber/include "C:/Program Files/Microsoft SDKs/Kinect/v2.0-DevPreview1311/inc" ../IMUReader/include)
 
 
 set(
@@ -29,6 +29,6 @@ add_definitions(${PCL_DEFINITIONS})
 include_directories(${PCL_INCLUDE_DIRS} )
 add_executable(kinect2recorder ${srcs} )
 
-target_link_libraries(kinect2recorder ${Boost_LIBRARIES} ${PCL_LIBRARIES} k2grabber)
+target_link_libraries(kinect2recorder ${Boost_LIBRARIES} ${PCL_LIBRARIES} k2grabber IMUReader)
 
 

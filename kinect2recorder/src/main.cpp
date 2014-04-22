@@ -1,9 +1,13 @@
 #include <Kinect2Grabber.h>
+//#include <IMUReader.h>
+
 #include <pcl/io/openni_grabber.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 #include <iostream>
 #include <queue>
+
 
 //global queque and save information
 volatile int frameid = 0;
@@ -11,7 +15,7 @@ std::queue<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr,int>> cloud_qu
 bool running = false;
 std::string path;
 
-
+pcl::visualization::PCLVisualizer viewer("cloud");
 std::string int2string(int n)
 {
 	std::stringstream ss;
@@ -40,14 +44,19 @@ void saveCloud()
 			first_cloud = cloud_que.front();
 
 			std::cout << first_cloud.second << std::endl;
-			pcl::io::savePCDFileBinary(path+"/"+int2string(first_cloud.second) + ".pcd", *first_cloud.first);
+			//pcl::io::savePCDFileBinary(path+"/"+int2string(first_cloud.second) + ".pcd", *first_cloud.first);
+			viewer.removeAllPointClouds();
+			viewer.addPointCloud<pcl::PointXYZRGBA>(first_cloud.first, int2string(first_cloud.second));
+			//viewer.spinOnce();
 			cloud_que.pop();
 		}
 	}
 }
 
+
 //argv[1] the maximum frame #, infinite loop if negative 
 //argv[2] the path the cloud will be saved to
+//argv[3]=="kinect1" if the sensor is kinect1
 int main(int argc,char *argv[])
 {
 	//extract command line arguments
@@ -69,13 +78,31 @@ int main(int argc,char *argv[])
 
 	grabber->start();
 	running = true;
-	std::thread savethread(saveCloud);
+	//std::thread savethread(saveCloud);
 	
-	while (limitFrame<=0||frameid < limitFrame);
+	while (limitFrame <= 0 || frameid < limitFrame)
+	{
+		
+		while (!cloud_que.empty())
+		{
+			std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr, int> first_cloud;
+			first_cloud = cloud_que.front();
+
+			std::cout << first_cloud.second << std::endl;
+			//pcl::io::savePCDFileBinary(path+"/"+int2string(first_cloud.second) + ".pcd", *first_cloud.first);
+			viewer.removeAllPointClouds();
+			viewer.addPointCloud<pcl::PointXYZRGBA>(first_cloud.first, int2string(first_cloud.second));
+			//viewer.spinOnce();
+			cloud_que.pop();
+			boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+			viewer.spinOnce();
+		}
+		
+	}
 	grabber->stop();
 
 	running = false;
-	savethread.join();
+	//savethread.join();
 	std::cout << "ok!\n";
 
 }
