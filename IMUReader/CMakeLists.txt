@@ -16,16 +16,15 @@ find_package(PCL 1.2 REQUIRED COMPONENTS common visualization)
 find_package(Boost COMPONENTS regex filesystem system date_time  thread chrono REQUIRED)
 
 set(
-srcs 
-#	src/main.cpp
+srcs src/main.cpp
 	 src/IMUReader.cpp
 	 src/MadgwickAHRS.cpp
 )  
 
 include_directories(${PCL_INCLUDE_DIRS} )
 
-#add_executable(IMUReader ${srcs} )
-add_library(IMUReader ${srcs} )
+add_executable(IMUReader ${srcs} )
+
 target_link_libraries(IMUReader ${Boost_LIBRARIES} ${PCL_LIBRARIES})
 
 

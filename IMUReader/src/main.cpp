@@ -25,7 +25,7 @@ int main()
 				{
 					//update the pose with AHRS algorithm
 					imureader.ahrs_.SamplePeriod = (data.time - last_data.time) / 1e6;
-					imureader.ahrs_.Update(data.gyro[0], data.gyro[1], data.gyro[2], data.acce[0], data.acce[1], data.acce[2], data.comp[0], data.comp[1], data.comp[2]);
+					imureader.ahrs_.Update(data.gyro[0], data.gyro[1], data.gyro[2], data.acce[0], data.acce[1], data.acce[2]);
 					
 					//visualize the pose with a cube
 					pcl::ModelCoefficients cof;
