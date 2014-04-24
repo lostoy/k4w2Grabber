@@ -4,78 +4,135 @@
 
 #include <iostream>
 #include <queue>
+#include <conio.h>
 
-//global queque and save information
-volatile int frameid = 0;
-std::queue<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr,int>> cloud_que;
-bool running = false;
-std::string path;
-
-
-std::string int2string(int n)
+class KinectRecorder
 {
-	std::stringstream ss;
-	ss << n;
-	return ss.str();
-}
 
-//kinect callback, add new xyzrgba cloud to saving queue
-void addcloud2que(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud)
-{
-	frameid++;
-	
-	cloud_que.push(std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr, int>(cloud,frameid));
-	std::cout << frameid << std::endl;
-}
-
-//save cloud thread, save all remaining cloud in the queue
-void saveCloud()
-{
-	while (running)
+public:
+	KinectRecorder(int limitNum, std::string path, std::string device) :limitNum_(limitNum), path_(path), frameid_(0), running_(false), pause_(false)
 	{
+		if (device == "kinect1")
+			grabber_ = new pcl::OpenNIGrabber();
+		else
+			grabber_ = new Kinect2Grabber;
+		
+		//register calback function
+		boost::function<void(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&)> f =
+			boost::bind(&KinectRecorder::addcloud2que, this, _1);
+		grabber_->registerCallback(f);
 
-		while (!cloud_que.empty())
+	}
+	~KinectRecorder()
+	{
+		stop();
+		saveThread_.join();
+		std::cout << "ok! press anykey to close...\n";
+		keyboardThread_.join();
+		
+	}
+	void start()
+	{
+		grabber_->start();
+		running_ = true;
+		saveThread_ = std::thread(&KinectRecorder::saveCloud,this);
+		keyboardThread_ = std::thread(&KinectRecorder::keyboardCallback, this);
+		while (running_&&(limitNum_ <= 0 || frameid_ < limitNum_));
+		stop();
+		
+
+	}
+	void stop()
+	{
+		if (running_)
 		{
-			std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr, int> first_cloud;
-			first_cloud = cloud_que.front();
+			grabber_->stop();
+			running_ = false;
 
-			std::cout << first_cloud.second << std::endl;
-			pcl::io::savePCDFileBinary(path+"/"+int2string(first_cloud.second) + ".pcd", *first_cloud.first);
-			cloud_que.pop();
+			
 		}
 	}
-}
 
+private:
+	//global queque and save information
+
+	pcl::Grabber *grabber_;
+	std::thread saveThread_,keyboardThread_;
+
+	volatile int frameid_ ,limitNum_;
+	std::queue<std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr, int>> cloud_que_;
+	bool running_ ,pause_;
+	std::string path_;
+
+
+	std::string int2string(int n)
+	{
+		std::stringstream ss;
+		ss << n;
+		return ss.str();
+	}
+
+	//kinect callback, add new xyzrgba cloud to saving queue
+	void addcloud2que(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr &cloud)
+	{
+		if (!pause_)
+		{
+
+			frameid_++;
+
+			cloud_que_.push(std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr, int>(cloud, frameid_));
+			std::cout << "read:" << frameid_ << std::endl;
+		}
+	}
+
+	//save cloud thread, save all remaining cloud in the queue
+	void saveCloud()
+	{
+		while (running_)
+		{
+
+			while (!cloud_que_.empty())
+			{
+				std::pair<pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr, int> first_cloud;
+				first_cloud = cloud_que_.front();
+
+				std::cout << "save: " << first_cloud.second << std::endl;
+				pcl::io::savePCDFileBinary(path_ + "/" + int2string(first_cloud.second) + ".pcd", *first_cloud.first);
+				cloud_que_.pop();
+			}
+			
+		}
+	}
+
+	//keyboard thread
+	void keyboardCallback()
+	{
+		while (running_)
+		{
+			char ch = getch();
+			if (ch == 'q')
+				stop();
+			if (ch == 'p')
+				pause_ = !pause_;
+		}
+	}
+};
 //argv[1] the maximum frame #, infinite loop if negative 
 //argv[2] the path the cloud will be saved to
+//argv[3]=="kinect1" if the device is kinect1 
+//when recording data, press 'p' to toggle pause, 'q' to quit
 int main(int argc,char *argv[])
 {
 	//extract command line arguments
-	int limitFrame = atoi(argv[1]);
-	std::cout << "max num: " << limitFrame << std::endl;
-	path = argv[2];
-
-	//Kinect2Grabber grabber;
-	pcl::Grabber *grabber;
-	if (std::string(argv[3]) == "kinect1")
-		grabber = new pcl::OpenNIGrabber();
-	else
-		grabber = new Kinect2Grabber;
-
-	//register calback function
-	boost::function<void(const pcl::PointCloud<pcl::PointXYZRGBA>::ConstPtr&)> f =
-		boost::bind(&addcloud2que,_1);
-	grabber->registerCallback(f);
-
-	grabber->start();
-	running = true;
-	std::thread savethread(saveCloud);
+	int limitNum = atoi(argv[1]);
+	std::cout << "max num: " << limitNum << std::endl;
 	
-	while (limitFrame<=0||frameid < limitFrame);
-	grabber->stop();
+	
+	KinectRecorder krecorder(limitNum, std::string(argv[2]), std::string(argv[3]));
+	
+	krecorder.start();
 
-	running = false;
-	savethread.join();
-	std::cout << "ok!\n";
+	return 0;
+	
 
 }

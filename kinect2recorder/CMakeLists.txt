@@ -15,7 +15,7 @@ find_package(PCL 1.2 REQUIRED COMPONENTS common io io_ply visualization)
 
 
 
-include_directories(${Boost_INCLUDE_DIRS} ../kinect2grabber/include "C:/Program Files/Microsoft SDKs/Kinect/v2.0-DevPreview1311/inc")
+include_directories(${Boost_INCLUDE_DIRS} ../kinect2grabber/include "C:/Program Files/Microsoft SDKs/Kinect/v2.0-DevPreview1403/inc")
 
 
 set(

@@ -15,7 +15,7 @@ find_package(PCL 1.2 REQUIRED COMPONENTS common io io_ply)
 
 
 
-include_directories(${Boost_INCLUDE_DIRS} include "C:/Program Files/Microsoft SDKs/Kinect/v2.0-DevPreview1311/inc")
+include_directories(${Boost_INCLUDE_DIRS} include "C:/Program Files/Microsoft SDKs/Kinect/v2.0-DevPreview1403/inc")
 
 
 set(
@@ -29,6 +29,6 @@ add_definitions(${PCL_DEFINITIONS})
 include_directories(${PCL_INCLUDE_DIRS} )
 add_library(k2grabber ${srcs} )
 
-target_link_libraries(k2grabber ${Boost_LIBRARIES} ${PCL_LIBRARIES} "C:/Program Files/Microsoft SDKs/Kinect/v2.0-DevPreview1311/lib/x64/Kinect20.lib")
+target_link_libraries(k2grabber ${Boost_LIBRARIES} ${PCL_LIBRARIES} "C:/Program Files/Microsoft SDKs/Kinect/v2.0-DevPreview1403/lib/x64/Kinect20.lib")
 
 
